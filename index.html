@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuclear Physics Quiz App</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #007bff;
+            margin: 0;
+            color: white;
+        }
+        .quiz-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 650px;
+            text-align: center;
+            color: #333;
+        }
+        .question-text {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option-btn {
+            background-color: #e9e9e9;
+            border: 1px solid #ccc;
+            padding: 15px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.2s, opacity 0.5s;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: slideIn 0.5s forwards;
+        }
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .option-btn:hover {
+            background-color: #ddd;
+        }
+        .option-btn.correct {
+            background-color: #a8e6cf;
+            border-color: #6bcc8c;
+        }
+        .option-btn.incorrect {
+            background-color: #ffb3ba;
+            border-color: #f58d97;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        #next-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        #next-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h2 class="question-text"></h2>
+        <div class="options-container"></div>
+        <div id="result"></div>
+        <button id="next-btn" disabled>Next Question</button>
+    </div>
+    <script>
+        const questions = [
+            {
+                question: "The charge on a proton is:",
+                options: [
+                    "1.6 x 10^9 C",
+                    "1.6 x 10^-19 C",
+                    "1.6 x 10^-7 C",
+                    "1.6 x 10^19 C"
+                ],
+                answer: "1.6 x 10^-19 C"
+            },
+            {
+                question: "The mass of a proton is:",
+                options: [
+                    "1.6 x 10^19 kg",
+                    "1.67 x 10^-19 kg",
+                    "1.67 x 10^-27 kg",
+                    "1.6 x 10^-30 kg"
+                ],
+                answer: "1.67 x 10^-27 kg"
+            },
+            {
+                question: "The protons and the neutrons in a nucleus are collectively referred to as:",
+                options: [
+                    "nucleus",
+                    "electrons",
+                    "atoms",
+                    "nucleons"
+                ],
+                answer: "nucleons"
+            },
+            {
+                question: "The number of protons in the nucleus of an atom is different in different elements and is called its:",
+                options: [
+                    "atomic number",
+                    "atomic weight",
+                    "atomic charge",
+                    "molecular formula"
+                ],
+                answer: "atomic number"
+            },
+            {
+                question: "The total number of protons and neutrons in a nucleus of all atoms is called its:",
+                options: [
+                    "atomic number",
+                    "atomic charge",
+                    "atomic formula",
+                    "atomic mass number"
+                ],
+                answer: "atomic mass number"
+            },
+            {
+                question: "If Z is the atomic number and A is its atomic mass then the number of neutrons in the nucleus are:",
+                options: [
+                    "N = A + Z",
+                    "N = Z - A",
+                    "N = A x Z",
+                    "N = A - Z"
+                ],
+                answer: "N = A - Z"
+            },
+            {
+                question: "The number of electrons in an atom of atomic number Z and mass number A is:",
+                options: [
+                    "A",
+                    "Z",
+                    "A + Z",
+                    "A - Z"
+                ],
+                answer: "Z"
+            },
+            {
+                question: "Atom nucleus with a given atomic and mass number is written as:",
+                options: [
+                    "X^A_Z",
+                    "A^Z_X",
+                    "A_Z^X",
+                    "Z^A_X"
+                ],
+                answer: "A^Z_X"
+            },
+            {
+                question: "The diameter of a nucleus is of the order of:",
+                options: [
+                    "10^-4 m",
+                    "10^-8 m",
+                    "10^-12 m",
+                    "10^-14 m"
+                ],
+                answer: "10^-14 m"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const questionElement = document.querySelector('.question-text');
+        const optionsContainer = document.querySelector('.options-container');
+        const resultElement = document.getElementById('result');
+        const nextButton = document.getElementById('next-btn');
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        const shuffledQuestions = shuffleArray([...questions]);
+
+        function showQuestion(question) {
+            questionElement.textContent = question.question;
+            optionsContainer.innerHTML = '';
+            resultElement.textContent = '';
+            nextButton.disabled = true;
+
+            const shuffledOptions = shuffleArray([...question.options]);
+
+            shuffledOptions.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-btn');
+                button.style.animationDelay = `${index * 0.5}s`;
+                button.addEventListener('click', () => selectOption(button, option, question.answer));
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function selectOption(selectedButton, selectedOption, answer) {
+            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+            nextButton.disabled = false;
+
+            if (selectedOption.trim() === answer.trim()) {
+                resultElement.textContent = "Correct! ✅";
+                resultElement.style.color = "green";
+                selectedButton.classList.add('correct');
+                score++;
+            } else {
+                resultElement.textContent = "Incorrect! ❌";
+                resultElement.style.color = "red";
+                selectedButton.classList.add('incorrect');
+                document.querySelectorAll('.option-btn').forEach(btn => {
+                    if (btn.textContent.trim() === answer.trim()) {
+                        btn.classList.add('correct');
+                    }
+                });
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < shuffledQuestions.length) {
+                showQuestion(shuffledQuestions[currentQuestionIndex]);
+            } else {
+                questionElement.textContent = "Quiz Complete! 🎉";
+                optionsContainer.innerHTML = '';
+                resultElement.textContent = `Your final score is: ${score} out of ${shuffledQuestions.length}`;
+                resultElement.style.color = "black";
+                nextButton.style.display = 'none';
+            }
+        }
+
+        nextButton.addEventListener('click', nextQuestion);
+        showQuestion(shuffledQuestions[currentQuestionIndex]);
+    </script>
+</body>
+</html>
