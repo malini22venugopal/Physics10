@@ -2,20 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nuclear Physics Quiz Full With Timer</title>
+    <title>Nuclear Physics Quiz</title>
+    <style>
+        body {background: #007bff; margin:0; font-family: 'Segoe UI', 'Times New Roman', serif; color: #222;}
+        .centered {width:96%; max-width:440px; margin:44px auto; background: #fff; color:#222; padding:28px 18px 22px 18px; border-radius:12px; box-shadow:0 4px 14px rgba(0,0,0,0.14);}
+        .field {width:88%; padding:10px 8px; margin: 12px 0 18px 0; font-size:1.1em; border-radius:6px; border:1px solid #bbb;}
+        #login h2 {margin-top:0;}
+        .error { color:#c51b1b; font-weight:bold; min-height:28px;}
+        .btn { padding:12px 28px; background: #0056b3; color:#fff; border:none; border-radius:6px; font-size:1.1em; cursor:pointer; transition:background 0.15s;}
+        .btn:disabled { background:#aaa; cursor:not-allowed;}
+        #timer {color:#c51b1b; font-weight:bold; margin-bottom:14px;font-size:1.09em;}
+        #question { font-size:1.18em; margin:18px 0 10px 0; }
+        #options { margin: 0 0 16px 0; }
+        .option-btn {
+            display:block; width:95%; margin:10px auto; padding:13px; background:#f9fcff; border-radius:5px; border:1.3px solid #729cf0;
+            font-size:1em; text-align:left; cursor:pointer; transition:background 0.13s,border 0.13s;
+        }
+        .option-btn:active {background:#cddcfb;}
+        .option-btn.correct { background:#a8e6cf!important; border:2.2px solid #32ba7c!important;}
+        .option-btn.incorrect { background:#fddede!important; border:2.2px solid #f58d97!important;}
+        #result {font-weight:bold; font-size:1.15em; padding:8px 0;}
+        #next {margin:6px 0 12px 0;}
+        .wa-btn { display: block; margin: 28px auto 0 auto; background: #25D366; color: white; padding: 14px 22px; border-radius: 7px; font-size:1.12em; text-align:center; text-decoration:none;max-width:300px;}
+    </style>
 </head>
 <body>
-<div id="login">
-    <input id="student-name" placeholder="Enter your name" />
-    <button onclick="startQuiz()">Start Quiz</button>
-    <span id="error" style="color:red;"></span>
+<div class="centered" id="login">
+    <h2>Nuclear Physics Quiz</h2>
+    <input class="field" id="student-name" placeholder="Enter your name" autocomplete="off" />
+    <button class="btn" onclick="startQuiz()">Start Quiz</button>
+    <div class="error" id="error"></div>
 </div>
-<div id="quiz" style="display:none;">
-    <div id="timer" style="font-weight:bold;color:#c51b1b;margin-bottom:8px;"></div>
-    <p id="question"></p>
+<div class="centered" id="quiz" style="display:none;">
+    <div id="timer"></div>
+    <div id="question"></div>
     <div id="options"></div>
     <div id="result"></div>
-    <button id="next" onclick="nextQuestion()" style="display:none;">Next</button>
+    <button class="btn" id="next" onclick="nextQuestion()" style="display:none;">Next</button>
 </div>
 <script>
 const questions = [
@@ -33,10 +56,16 @@ let current=0, score=0, name="", timer=60, timerRef;
 
 function startQuiz() {
     name = document.getElementById('student-name').value.trim();
-    if(!name) {document.getElementById('error').textContent="Please enter name."; return;}
+    document.getElementById('error').textContent="";
+    if(!name){document.getElementById('error').textContent="Please enter your name."; return;}
+    let names=JSON.parse(localStorage.getItem('attemptedNames')||"[]");
+    if(names.includes(name.toLowerCase())){
+        document.getElementById('error').textContent="You have already attempted the quiz.";
+        return;
+    }
     document.getElementById('login').style.display="none";
     document.getElementById('quiz').style.display="";
-    timer=60;
+    timer=60; current=0; score=0;
     updateTimer();
     timerRef=setInterval(()=>{
         timer--;
@@ -56,15 +85,26 @@ function showQuestion() {
     document.getElementById('question').textContent = q.question;
     document.getElementById('result').textContent = "";
     document.getElementById('next').style.display="none";
-    const opts = q.options.map(opt=>`<button onclick="selectOpt(this, '${opt.replace(/'/g,"\\'")}')">${opt}</button>`).join("<br>");
-    document.getElementById('options').innerHTML = opts;
-}
-function selectOpt(btn, selected){
-    Array.from(document.getElementById('options').children).forEach(b=>b.disabled=true);
-    const q = questions[current];
-    if(selected === q.answer) {btn.style.background="lightgreen"; score++; document.getElementById('result').textContent="Correct!";}
-    else {btn.style.background="#f99"; document.getElementById('result').textContent="Incorrect!";}
-    document.getElementById('next').style.display = "inline-block";
+    document.getElementById('options').innerHTML = "";
+    q.options.forEach(opt=>{
+        let btn=document.createElement('button');
+        btn.className="option-btn";
+        btn.innerText=opt;
+        btn.onclick=function(){
+            Array.from(document.getElementsByClassName('option-btn')).forEach(b=>b.disabled=true);
+            if(opt === q.answer){
+                btn.classList.add('correct');
+                score++;
+                document.getElementById('result').textContent="Correct!";
+            } else {
+                btn.classList.add('incorrect');
+                document.getElementById('result').textContent="Incorrect!";
+                Array.from(document.getElementsByClassName('option-btn')).forEach(b=>{if(b.innerText===q.answer){b.classList.add('correct');}});
+            }
+            document.getElementById('next').style.display="inline-block";
+        }
+        document.getElementById('options').appendChild(btn);
+    });
 }
 function nextQuestion(){
     current++;
@@ -73,12 +113,19 @@ function nextQuestion(){
 }
 function finishQuiz(timeup){
     clearInterval(timerRef);
-    document.getElementById('quiz').innerHTML=
-    `<h2>Quiz finished, ${name}!</h2>
-    <h3>Your score: ${score}/${questions.length}</h3>
-    ${timeup?"<span style='color:#c51b1b;'>Time's up!</span>":""}`;
+    let names=JSON.parse(localStorage.getItem('attemptedNames')||"[]");
+    names.push(name.toLowerCase());
+    localStorage.setItem('attemptedNames',JSON.stringify(names));
+    let msg = `Quiz finished, ${name}!<br><b>Your score: ${score} / ${questions.length}</b>`;
+    if(timeup) msg += "<div style='color:#c51b1b;'>Time's up!</div>";
+    // WhatsApp share
+    let phone="919994895676";
+    let wa = encodeURIComponent(`Student: ${name}\nNuclear Physics Quiz Score: ${score} out of ${questions.length}`);
+    msg += `<a class="wa-btn" href="https://wa.me/${phone}?text=${wa}" target="_blank">Send Score via WhatsApp</a>`;
+    document.getElementById('quiz').innerHTML = `<div style='text-align:center;'>${msg}</div>`;
 }
 </script>
 </body>
 </html>
+
 
