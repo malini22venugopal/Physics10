@@ -2,154 +2,83 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nuclear Physics Quiz</title>
-    <style>
-        body { background:#007bff; margin:0; font-family:'Times New Roman',serif; color:white;}
-        .centered { width:90%; max-width:500px; margin:60px auto; background:rgba(255,255,255,0.96); color:#222; padding:32px; border-radius:8px;}
-        input[type=text] { font-size:1em; padding:8px; width:80%; margin-bottom:12px;}
-        button { padding:10px 18px; background:#0056b3; color:white; border:none; border-radius:5px; font-size:1em;}
-        button:disabled { background:#bbb;}
-        .option-btn { padding:10px; margin:7px; border-radius:6px; border:1px solid #aaa; background:#f6f6f6; color:#222; width:90%;}
-        .option-btn.correct { background:#a8e6cf;}
-        .option-btn.incorrect { background:#ffb3ba;}
-        #timer { color:#c51b1b; font-weight:bold; margin-bottom:14px;}
-        .hidden { display:none;}
-        .error { color:#c51b1b; font-weight:bold; margin-bottom:10px;}
-        .wa-btn { display:block; margin:30px auto 0 auto; font-size:1.2em; background:#25D366; color:white; padding:12px 24px; border-radius:10px; text-decoration:none;}
-    </style>
+    <title>Nuclear Physics Quiz Full With Timer</title>
 </head>
 <body>
-    <div class="centered" id="login-container">
-        <h2>Login – Nuclear Physics Quiz</h2>
-        <input type="text" id="student-name" placeholder="Enter your name" />
-        <br>
-        <button onclick="startQuiz()">Start Quiz</button>
-        <div class="error" id="error-msg"></div>
-    </div>
-    <div class="centered hidden" id="quiz-container">
-        <div id="timer"></div>
-        <div id="question"></div>
-        <div id="options"></div>
-        <div id="result"></div>
-        <button id="next-btn" onclick="nextQuestion()" disabled>Next</button>
-    </div>
-    <script>
-    const questions = [
-        { question: "The charge on a proton is:", options: [
-            "1.6 x 10^9 C", "1.6 x 10^-19 C", "1.6 x 10^-7 C", "1.6 x 10^19 C"], answer:"1.6 x 10^-19 C"},
-        { question: "The mass of a proton is:", options: [
-            "1.6 x 10^19 kg", "1.67 x 10^-19 kg", "1.67 x 10^-27 kg", "1.6 x 10^-30 kg"], answer:"1.67 x 10^-27 kg"},
-        { question: "The protons and the neutrons in a nucleus are collectively referred to as:", options: [
-            "nucleus", "electrons", "atoms", "nucleons"], answer:"nucleons"},
-        { question: "The number of protons in the nucleus of an atom is different in different elements and is called its:", options: [
-            "atomic number", "atomic weight", "atomic charge", "molecular formula"], answer:"atomic number"},
-        { question: "The total number of protons and neutrons in a nucleus of all atoms is called its:", options: [
-            "atomic number", "atomic charge", "atomic formula", "atomic mass number"], answer:"atomic mass number"},
-        { question: "If Z is the atomic number and A is its atomic mass then the number of neutrons in the nucleus are:", options: [
-            "N = A + Z", "N = Z - A", "N = A x Z", "N = A - Z"], answer:"N = A - Z"},
-        { question: "The number of electrons in an atom of atomic number Z and mass number A is:", options: [
-            "A", "Z", "A + Z", "A - Z"], answer:"Z"},
-        { question: "Atom nucleus with a given atomic and mass number is written as:", options: [
-            "X^A_Z", "A^Z_X", "A_Z^X", "Z^A_X"], answer:"A^Z_X"},
-        { question: "The diameter of a nucleus is of the order of:", options: [
-            "10^-4 m", "10^-8 m", "10^-12 m", "10^-14 m"], answer:"10^-14 m"}
-    ];
-    let studentName="", attemptedNames=[], currentQuestion=0, score=0, timeLeft=60, timerInt;
+<div id="login">
+    <input id="student-name" placeholder="Enter your name" />
+    <button onclick="startQuiz()">Start Quiz</button>
+    <span id="error" style="color:red;"></span>
+</div>
+<div id="quiz" style="display:none;">
+    <div id="timer" style="font-weight:bold;color:#c51b1b;margin-bottom:8px;"></div>
+    <p id="question"></p>
+    <div id="options"></div>
+    <div id="result"></div>
+    <button id="next" onclick="nextQuestion()" style="display:none;">Next</button>
+</div>
+<script>
+const questions = [
+ {question:"The charge on a proton is:", options:["1.6 x 10^9 C","1.6 x 10^-19 C","1.6 x 10^-7 C","1.6 x 10^19 C"], answer:"1.6 x 10^-19 C"},
+ {question:"The mass of a proton is:", options:["1.6 x 10^19 kg","1.67 x 10^-19 kg","1.67 x 10^-27 kg","1.6 x 10^-30 kg"], answer:"1.67 x 10^-27 kg"},
+ {question:"The protons and the neutrons in a nucleus are collectively referred to as:", options:["nucleus","electrons","atoms","nucleons"], answer:"nucleons"},
+ {question:"The number of protons in the nucleus of an atom is different in different elements and is called its:", options:["atomic number","atomic weight","atomic charge","molecular formula"], answer:"atomic number"},
+ {question:"The total number of protons and neutrons in a nucleus of all atoms is called its:", options:["atomic number","atomic charge","atomic formula","atomic mass number"], answer:"atomic mass number"},
+ {question:"If Z is the atomic number and A is its atomic mass then the number of neutrons in the nucleus are:", options:["N = A + Z","N = Z - A","N = A x Z","N = A - Z"], answer:"N = A - Z"},
+ {question:"The number of electrons in an atom of atomic number Z and mass number A is:", options:["A","Z","A + Z","A - Z"], answer:"Z"},
+ {question:"Atom nucleus with a given atomic and mass number is written as:", options:["X^A_Z","A^Z_X","A_Z^X","Z^A_X"], answer:"A^Z_X"},
+ {question:"The diameter of a nucleus is of the order of:", options:["10^-4 m","10^-8 m","10^-12 m","10^-14 m"], answer:"10^-14 m"}
+];
+let current=0, score=0, name="", timer=60, timerRef;
 
-    function startQuiz() {
-        document.getElementById('error-msg').textContent = "";
-        studentName = document.getElementById('student-name').value.trim();
-        if(!studentName) {
-            document.getElementById('error-msg').textContent = "Please enter your name.";
-            return;
+function startQuiz() {
+    name = document.getElementById('student-name').value.trim();
+    if(!name) {document.getElementById('error').textContent="Please enter name."; return;}
+    document.getElementById('login').style.display="none";
+    document.getElementById('quiz').style.display="";
+    timer=60;
+    updateTimer();
+    timerRef=setInterval(()=>{
+        timer--;
+        updateTimer();
+        if(timer<=0){
+            clearInterval(timerRef);
+            finishQuiz(true);
         }
-        attemptedNames = JSON.parse(localStorage.getItem('attemptedNames')||"[]");
-        if(attemptedNames.includes(studentName.toLowerCase())) {
-            document.getElementById('error-msg').textContent = "You have already attempted the quiz.";
-            return;
-        }
-        document.getElementById('login-container').classList.add('hidden');
-        document.getElementById('quiz-container').classList.remove('hidden');
-        showQuestion();
-        startTimer();
-    }
-
-    function showQuestion() {
-        document.getElementById('result').textContent = "";
-        document.getElementById('next-btn').disabled = true;
-        const q = questions[currentQuestion];
-        document.getElementById('question').textContent = (currentQuestion+1)+". "+q.question;
-        document.getElementById('options').innerHTML = "";
-        q.options.forEach(opt=>{
-            let btn = document.createElement('button');
-            btn.textContent=opt;
-            btn.className="option-btn";
-            btn.onclick=()=>selectOption(btn,opt,q.answer);
-            document.getElementById('options').appendChild(btn);
-        });
-    }
-
-    function selectOption(btn,selected,answer){
-        Array.from(document.getElementsByClassName('option-btn')).forEach(b=>b.disabled=true);
-        document.getElementById('next-btn').disabled = false;
-        if(selected.trim()===answer.trim()){
-            btn.classList.add('correct');
-            document.getElementById('result').textContent="Correct!";
-            score++;
-        }else{
-            btn.classList.add('incorrect');
-            document.getElementById('result').textContent="Incorrect!";
-            Array.from(document.getElementsByClassName('option-btn')).forEach(b=>{
-                if(b.textContent.trim()===answer.trim()){ b.classList.add('correct'); }
-            });
-        }
-    }
-
-    function nextQuestion() {
-        currentQuestion++;
-        if(currentQuestion<questions.length){
-            showQuestion();
-        }else{
-            endQuiz();
-        }
-    }
-
-    function startTimer(){
-        document.getElementById('timer').textContent="Time left: 1:00";
-        timeLeft=60;
-        timerInt=setInterval(()=>{
-            timeLeft--;
-            document.getElementById('timer').textContent="Time left: "+Math.floor(timeLeft/60)+":"+
-                ('0'+(timeLeft%60)).slice(-2);
-            if(timeLeft<=0){ clearInterval(timerInt); endQuiz(); }
-        },1000);
-    }
-
-    function endQuiz() {
-        clearInterval(timerInt);
-        document.getElementById('question').textContent="Quiz Complete!";
-        document.getElementById('options').innerHTML="";
-        document.getElementById('result').textContent="Your final score is: "+score+" out of "+questions.length;
-        document.getElementById('timer').textContent="Time's up!";
-        document.getElementById('next-btn').style.display="none";
-        attemptedNames.push(studentName.toLowerCase());
-        localStorage.setItem('attemptedNames', JSON.stringify(attemptedNames));
-
-        // WhatsApp button (correct string concatenation!)
-        let phone = "919994895676"; // Indian country code + mobile number, no +
-        let msg = encodeURIComponent(
-          "Student: " + studentName +
-          "
-Nuclear Physics Quiz Score: " + score + " out of " + questions.length
-        );
-        let waLink = `https://wa.me/${phone}?text=${msg}`;
-        let waBtn = document.createElement("a");
-        waBtn.href = waLink;
-        waBtn.target = "_blank";
-        waBtn.innerText = "Send Score via WhatsApp";
-        waBtn.className = "wa-btn";
-        document.getElementById('result').appendChild(waBtn);
-    }
-    </script>
+    },1000);
+    showQuestion();
+}
+function updateTimer() {
+    document.getElementById('timer').textContent = "Time left: " + Math.floor(timer/60) + ":" + (timer%60<10?"0":"") + (timer%60);
+}
+function showQuestion() {
+    const q = questions[current];
+    document.getElementById('question').textContent = q.question;
+    document.getElementById('result').textContent = "";
+    document.getElementById('next').style.display="none";
+    const opts = q.options.map(opt=>`<button onclick="selectOpt(this, '${opt.replace(/'/g,"\\'")}')">${opt}</button>`).join("<br>");
+    document.getElementById('options').innerHTML = opts;
+}
+function selectOpt(btn, selected){
+    Array.from(document.getElementById('options').children).forEach(b=>b.disabled=true);
+    const q = questions[current];
+    if(selected === q.answer) {btn.style.background="lightgreen"; score++; document.getElementById('result').textContent="Correct!";}
+    else {btn.style.background="#f99"; document.getElementById('result').textContent="Incorrect!";}
+    document.getElementById('next').style.display = "inline-block";
+}
+function nextQuestion(){
+    current++;
+    if(current<questions.length) showQuestion();
+    else finishQuiz(false);
+}
+function finishQuiz(timeup){
+    clearInterval(timerRef);
+    document.getElementById('quiz').innerHTML=
+    `<h2>Quiz finished, ${name}!</h2>
+    <h3>Your score: ${score}/${questions.length}</h3>
+    ${timeup?"<span style='color:#c51b1b;'>Time's up!</span>":""}`;
+}
+</script>
 </body>
 </html>
+
