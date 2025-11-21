@@ -126,29 +126,29 @@
     }
 
     function endQuiz() {
-        clearInterval(timerInt);
-        document.getElementById('question').textContent="Quiz Complete!";
-        document.getElementById('options').innerHTML="";
-        document.getElementById('result').textContent="Your final score is: "+score+" out of "+questions.length;
-        document.getElementById('timer').textContent="Time's up!";
-        document.getElementById('next-btn').style.display="none";
-        attemptedNames.push(studentName.toLowerCase());
-        localStorage.setItem('attemptedNames', JSON.stringify(attemptedNames));
+    clearInterval(timerInt);
+    document.getElementById('question').textContent="Quiz Complete!";
+    document.getElementById('options').innerHTML="";
+    document.getElementById('result').textContent="Your final score is: "+score+" out of "+questions.length;
+    document.getElementById('timer').textContent="Time's up!";
+    document.getElementById('next-btn').style.display="none";
+    attemptedNames.push(studentName.toLowerCase());
+    localStorage.setItem('attemptedNames', JSON.stringify(attemptedNames));
 
-        // WhatsApp button
-        let phone = "919994895676"; // Indian country code + your number, no plus sign!
-        let msg = encodeURIComponent(
-          "Student: " + studentName +
-          "
+    // WhatsApp button (syntax fixed)
+    let phone = "919994895676"; // Indian country code + mobile number, no +
+    let msg = encodeURIComponent(
+      "Student: " + studentName +
+      "
 Nuclear Physics Quiz Score: " + score + " out of " + questions.length
-        );
-        let waLink = `https://wa.me/${phone}?text=${msg}`;
-        let waBtn = document.createElement("a");
-        waBtn.href = waLink;
-        waBtn.target = "_blank";
-        waBtn.innerText = "Send Score via WhatsApp";
-        waBtn.className = "wa-btn";
-        document.getElementById('result').appendChild(waBtn);
+    );
+    let waLink = `https://wa.me/${phone}?text=${msg}`;
+    let waBtn = document.createElement("a");
+    waBtn.href = waLink;
+    waBtn.target = "_blank";
+    waBtn.innerText = "Send Score via WhatsApp";
+    waBtn.className = "wa-btn";
+    document.getElementById('result').appendChild(waBtn);
     }
     </script>
 </body>
